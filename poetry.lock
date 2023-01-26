@@ -181,7 +181,7 @@ scipy = "^1.9.3"
 type = "git"
 url = "git@github.com:matheusvra/high_order_spectra_analysis.git"
 reference = "main"
-resolved_reference = "9f038ea97efc10927ab44216da84db6661d4a942"
+resolved_reference = "a7e6ea2275c3cf93d7fe2e539b268ecdaa9f0c71"
 
 [[package]]
 name = "kiwisolver"
