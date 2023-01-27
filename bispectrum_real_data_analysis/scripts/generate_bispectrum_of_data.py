@@ -5,6 +5,9 @@ import pandas as pd
 from high_order_spectra_analysis.time_domain_bispectrum.tdbs import tdbs
 from pathos.multiprocessing import ProcessingPool as Pool
 import os
+from time import perf_counter
+
+from bispectrum_real_data_analysis.scripts.utils import seconds_to_formatted_time
 
 
 def load_data():
@@ -118,9 +121,15 @@ if __name__ == "__main__":
 
     time = event_data.Time.to_numpy()
 
-    spectrum_df = pd.DataFrame()
-    bispectrum_df = pd.DataFrame()
+    spectrum_df_amps = pd.DataFrame()
+    spectrum_df_phases = pd.DataFrame()
+
+    bispectrum_df_amps = pd.DataFrame()
+    bispectrum_df_phases = pd.DataFrame()
+
     
+    start_time = perf_counter()
+
     with Pool() as pool:
         channels_columns = event_data.columns[2:18]
 
@@ -133,8 +142,8 @@ if __name__ == "__main__":
                     "time": time,
                     "fmin": 52,
                     "fmax": 55,
-                    "freq_step": 0.1,
-                    "phase_step": 0.1
+                    "freq_step": 0.01,
+                    "phase_step": 0.01
                 }
             ), 
             channels_columns
@@ -143,12 +152,16 @@ if __name__ == "__main__":
             signal = event_data[column].to_numpy()
             frequency_array, spectrum, phase_spectrum, bispectrum, phase_bispectrum = result["result"]
 
-            if "frequency" not in spectrum_df.columns or "frequency" not in bispectrum_df.columns:
-                spectrum_df = spectrum_df.assign(frequency=frequency_array)
-                bispectrum_df = bispectrum_df.assign(frequency=frequency_array)
+            if "frequency" not in spectrum_df_amps.columns or "frequency" not in bispectrum_df_amps.columns:
+                spectrum_df_amps = spectrum_df_amps.assign(frequency=frequency_array)
+                bispectrum_df_amps = bispectrum_df_amps.assign(frequency=frequency_array)
 
-            spectrum_df = spectrum_df.assign(**{f"tds_{column}": list(zip(spectrum, phase_spectrum))})
-            bispectrum_df = bispectrum_df.assign(**{f"tdbs_{column}": list(zip(bispectrum, phase_bispectrum))})
+            spectrum_df_amps = spectrum_df_amps.assign(**{f"tds_amp_{column}": spectrum})
+            spectrum_df_phases = spectrum_df_phases.assign(**{f"tds_phase_{column}": phase_spectrum})
+
+            bispectrum_df_amps = bispectrum_df_amps.assign(**{f"tdbs_amp_{column}": bispectrum})
+            bispectrum_df_phases = bispectrum_df_phases.assign(**{f"tdbs_phase_{column}": phase_bispectrum})
+
 
             if generate_plots:
                 fig = make_subplots(rows=3, cols=1)
@@ -170,7 +183,14 @@ if __name__ == "__main__":
 
                 fig.show()
 
+    spectrum_df = pd.concat([spectrum_df_amps, spectrum_df_phases], axis=1)
+    bispectrum_df = pd.concat([bispectrum_df_amps, bispectrum_df_phases], axis=1)
+
     spectrum_df.to_csv(f"{BASE_PATH}/spectrum_df.csv", index=False)
     bispectrum_df.to_csv(f"{BASE_PATH}/bispectrum_df.csv", index=False)
+
+    end_time = perf_counter()
+
+    print(f"Elapsed time: {seconds_to_formatted_time(end_time - start_time)}")
 
     

@@ -168,20 +168,15 @@ develop = false
 
 [package.dependencies]
 debugpy = "^1.6.4"
-matplotlib = "^3.6.2"
-multiprocess = "^0.70.14"
 numpy = "^1.23.5"
-pandas = "^1.5.2"
 pathos = "^0.3.0"
-plotly = "^5.11.0"
 progressbar2 = "^4.2.0"
-scipy = "^1.9.3"
 
 [package.source]
 type = "git"
 url = "git@github.com:matheusvra/high_order_spectra_analysis.git"
 reference = "main"
-resolved_reference = "a7e6ea2275c3cf93d7fe2e539b268ecdaa9f0c71"
+resolved_reference = "60da52af82f6fdc498428d02049dc7145aa8526f"
 
 [[package]]
 name = "kiwisolver"
@@ -746,4 +741,4 @@ doc = ["reno", "sphinx", "tornado (>=4.5)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "f4014df6654398541e7c263011c916fda0e679135efbacfed0c0942d0d9ea9f4"
+content-hash = "d7d18b26a8f42ac2280364026d176eb26c5bfacb4da79ef36391c1baec3393e3"
