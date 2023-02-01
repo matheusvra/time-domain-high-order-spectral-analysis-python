@@ -1,5 +1,6 @@
 import os
 import time
+import numpy as np
 
 def get_cpus_available() -> int:
     """Function to get the number of CPUs available on the system.
@@ -17,3 +18,14 @@ def seconds_to_formatted_time(seconds: float) -> str:
                 ).split(":"), ["h", "m", "s"]) if value != "00"
         ]
     )
+
+def standardize_array(array: np.ndarray) -> np.ndarray:
+    """Function to standardize an array.
+
+    Args:
+        array (np.ndarray): array to be standardized
+
+    Returns:
+        np.ndarray: standardized array
+    """
+    return (array - array.mean()) / array.std()
