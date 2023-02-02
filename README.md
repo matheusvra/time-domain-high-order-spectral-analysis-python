@@ -7,7 +7,6 @@ Este documento apresenta um tutorial sobre como instalar e configurar o ambiente
 
 ***Aviso 1***: Este tutorial foi criado e testado no Ubuntu. Se você não está usando uma distribuição baseada em Unix, alguns passos poderão ser diferentes e não estão cobertos neste documento.
 
-***Aviso 2***: Este repositório usa Git LFS, portanto, deve ser clonado apenas usando HTTP. Porém, as dependências utilizam SSH, então é necessário que exista uma chave pública SSH válida cadastrada na máquina, habilitada (***trusted***) no github e adicionada na lista de *known_hosts* para a correta instalação. Se você clonou usando SSH, provavelmente ocorreram erros, e de qualquer forma, recomenda-se apagar a versão clonada e repetir a operação usando HTTP.
 
 ## Importante
 
@@ -18,7 +17,6 @@ Este repositório é feito para aplicar os algoritmos do repositório [high_orde
 * Python 3.11
 * Pip 3.11
 * Poetry
-* Git LFS
 
 # Configuração do Ambiente
 
@@ -80,27 +78,6 @@ Para instalar o Poetry, gerenciador de dependências utilizado neste repositóri
 sudo curl -sSL https://install.python-poetry.org | python3 -
 ```
 
-## Instalando o Git LFS
-
-O Git LFS substitui arquivos grandes com ponteiros para esses arquivos, armazenando seus conteúdos em um servidor remoto, evitando operações Git demoradas e ineficientes. 
-
-Para instalar o Git LFS, execute os seguintes comandos:
-
-```shell
-curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
-
-```
-
-```shell
-sudo apt-get install git-lfs -y
-```
-
-```shell
-git lfs install
-```
-
-Caso você tenha clonado este repositório usando HTTP, instalado o Git LFS, e ao abrir arquivos do tipo *json* ou planilhas, apenas um pequeno texto relacionado ao Git LFS esteja aparecendo no lugar do conteúdo, é necessário carregar os arquivos novamente. Para isso, basta clonar o repositório novamente.
-
 ## Versionamento de Dependências e Instalação
 
 Todas as dependências utilizadas são versionadas no arquivo 'pyproject.toml', na raiz da pasta do projeto.
@@ -136,6 +113,9 @@ poetry install
 Para executar algum script, basta invocar o Python passando o caminho do script, ou usando o player intragrado da IDE utilizada, desde que o ambiente virtual esteja selecionado como interpretador Python. 
 
 ## Descrição abreviada dos scripts
+
+### -- **download_data.ipynb**
+Jupyter notebook para fazer o download dos arquivos. Isso foi necessário pois o github possui limite para armazenamento de arquivos grandes de forma gratuita. Rodar sempre após clonar o repositório.
 
 ### -- **load_data.m**
 Método para ser executado no matlab, para conversão de dados para CSV visando compatibilidade.
