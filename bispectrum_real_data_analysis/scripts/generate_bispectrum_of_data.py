@@ -59,7 +59,7 @@ def select_event_window(
   given number of samples to add to the begin and end, respectively.
   """
   
-  window_index = np.argwhere(data.events_index.to_numpy() == event_number).flatten()
+  window_index = np.argwhere(df.events_index.to_numpy() == event_number).flatten()
   begin_index = window_index[0] - samples_before
   end_index = window_index[-1] + samples_after
   return df[begin_index:end_index]
@@ -130,9 +130,14 @@ if __name__ == "__main__":
     # Warning: Depending on the configuration, the script may take a long time (hours) to run, be careful
 
     id_results: str = "rato-001"
+
+    # Select the configuration to run the script, by commenting/uncommenting and changing the lines below
+
+    # Configuration 1: Frequency array
     frequency_array = np.arange(start=4, stop=10, step=0.1)
     frequency_array = np.append(frequency_array, np.arange(start=53.71 - 2, stop=53.71 + 2, step=0.01))
 
+    # Configuration 2: Frequency range
     # TDBS_PARAMETERS = {
     #     "fmin": 0,
     #     "fmax": 60,
@@ -146,77 +151,82 @@ if __name__ == "__main__":
     }
 
     # From here, the script will run the same for all configurations
-    data, events_index, events_index_timestamp, events_behavior_TS_LFP_index, events_behavior_TS_LFPsec, BASE_PATH = load_data()
+    full_data, events_index, events_index_timestamp, events_behavior_TS_LFP_index, events_behavior_TS_LFPsec, BASE_PATH = load_data()
+
+    events = full_data.events_index.unique()
+    events = events[events.astype(bool)]
 
     samples_before = 0
     samples_after = 0
-    event_number = 1
+    for event_number in events:
 
-    event_data = select_event_window(
-        df=data,
-        event_number=event_number,
-        samples_before=samples_before,
-        samples_after=samples_after
-    )
+        print(f"\nProcessing event {event_number}")
 
-    desired_frequency_sampling = 200
+        event_data = select_event_window(
+            df=full_data,
+            event_number=event_number,
+            samples_before=samples_before,
+            samples_after=samples_after
+        )
 
-    data, TimeSampling, FrequencySampling, backup_data = decimate(event_data, desired_frequency_sampling=desired_frequency_sampling)
+        desired_frequency_sampling = 200
 
-    time = event_data.Time.to_numpy()
+        data, TimeSampling, FrequencySampling, backup_data = decimate(event_data, desired_frequency_sampling=desired_frequency_sampling)
 
-    spectrum_df_amps = pd.DataFrame()
-    spectrum_df_phases = pd.DataFrame()
+        time = event_data.Time.to_numpy()
 
-    bispectrum_df_amps = pd.DataFrame()
-    bispectrum_df_phases = pd.DataFrame()
+        spectrum_df_amps = pd.DataFrame()
+        spectrum_df_phases = pd.DataFrame()
 
-    print("Processing the tdbs... This may take a while...\n")
-    start_time = perf_counter()
+        bispectrum_df_amps = pd.DataFrame()
+        bispectrum_df_phases = pd.DataFrame()
 
-    # Process the tdbs for each channel, in parallel
-    with Pool() as pool:
-        channels_columns = event_data.columns[2:18]
+        print("Processing the tdbs... This may take a while...\n")
+        start_time = perf_counter()
 
-        for result in pool.map(
-            lambda column: process_tdbs(
-                column, 
-                event_data, 
-                {
-                    "frequency_sampling": FrequencySampling,
-                    "time": time,
-                    "frequency_array": TDBS_PARAMETERS.get("frequency_array"),
-                    "fmin": TDBS_PARAMETERS.get("fmin"),
-                    "fmax": TDBS_PARAMETERS.get("fmax"),
-                    "freq_step": TDBS_PARAMETERS.get("freq_step"),
-                    "phase_step": TDBS_PARAMETERS["phase_step"]
-                }
-            ), 
-            channels_columns
-        ):
-            column = result["column"]
-            signal = event_data[column].to_numpy()
-            frequency_array, spectrum, phase_spectrum, bispectrum, phase_bispectrum = result["result"]
+        # Process the tdbs for each channel, in parallel
+        with Pool() as pool:
+            channels_columns = event_data.columns[2:18]
 
-            if "frequency" not in spectrum_df_amps.columns or "frequency" not in bispectrum_df_amps.columns:
-                spectrum_df_amps = spectrum_df_amps.assign(frequency=frequency_array)
-                bispectrum_df_amps = bispectrum_df_amps.assign(frequency=frequency_array)
+            for result in pool.map(
+                lambda column: process_tdbs(
+                    column, 
+                    event_data, 
+                    {
+                        "frequency_sampling": FrequencySampling,
+                        "time": time,
+                        "frequency_array": TDBS_PARAMETERS.get("frequency_array"),
+                        "fmin": TDBS_PARAMETERS.get("fmin"),
+                        "fmax": TDBS_PARAMETERS.get("fmax"),
+                        "freq_step": TDBS_PARAMETERS.get("freq_step"),
+                        "phase_step": TDBS_PARAMETERS["phase_step"]
+                    }
+                ), 
+                channels_columns
+            ):
+                column = result["column"]
+                signal = event_data[column].to_numpy()
+                frequency_array, spectrum, phase_spectrum, bispectrum, phase_bispectrum = result["result"]
 
-            spectrum_df_amps = spectrum_df_amps.assign(**{f"tds_amp_{column}": spectrum})
-            spectrum_df_phases = spectrum_df_phases.assign(**{f"tds_phase_{column}": phase_spectrum})
+                if "frequency" not in spectrum_df_amps.columns or "frequency" not in bispectrum_df_amps.columns:
+                    spectrum_df_amps = spectrum_df_amps.assign(frequency=frequency_array)
+                    bispectrum_df_amps = bispectrum_df_amps.assign(frequency=frequency_array)
 
-            bispectrum_df_amps = bispectrum_df_amps.assign(**{f"tdbs_amp_{column}": bispectrum})
-            bispectrum_df_phases = bispectrum_df_phases.assign(**{f"tdbs_phase_{column}": phase_bispectrum})
+                spectrum_df_amps = spectrum_df_amps.assign(**{f"tds_amp_{column}": spectrum})
+                spectrum_df_phases = spectrum_df_phases.assign(**{f"tds_phase_{column}": phase_spectrum})
+
+                bispectrum_df_amps = bispectrum_df_amps.assign(**{f"tdbs_amp_{column}": bispectrum})
+                bispectrum_df_phases = bispectrum_df_phases.assign(**{f"tdbs_phase_{column}": phase_bispectrum})
 
 
-    spectrum_df = pd.concat([spectrum_df_amps, spectrum_df_phases], axis=1)
-    bispectrum_df = pd.concat([bispectrum_df_amps, bispectrum_df_phases], axis=1)
+        spectrum_df = pd.concat([spectrum_df_amps, spectrum_df_phases], axis=1)
+        bispectrum_df = pd.concat([bispectrum_df_amps, bispectrum_df_phases], axis=1)
 
-    spectrum_df.to_csv(f'{BASE_PATH}/spectrum_{id_results}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv', index=False)
-    bispectrum_df.to_csv(f'{BASE_PATH}/bispectrum_{id_results}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv', index=False)
+        spectrum_df.to_csv(f'{BASE_PATH}/spectrum_{id_results}-evento-{event_number}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv', index=False)
+        bispectrum_df.to_csv(f'{BASE_PATH}/bispectrum_{id_results}-evento-{event_number}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv', index=False)
 
-    end_time = perf_counter()
+        end_time = perf_counter()
 
-    print(f"Done. Elapsed time: {seconds_to_formatted_time(end_time - start_time)}")
+        print(f"Done. Elapsed time: {seconds_to_formatted_time(end_time - start_time)}")
 
     
