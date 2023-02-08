@@ -33,6 +33,7 @@ Python 3.11 no Ubuntu.
 sudo apt-get install software-properties-common -y
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt-get install python3.11 -y
+sudo apt-get install python3.11-distutils -y
 ```
 
 Agora você tem pelo menos uma versão do Python 3.11 instalada, use o comando ***python*** para a versão 2.x (se ainda estiver instalada),

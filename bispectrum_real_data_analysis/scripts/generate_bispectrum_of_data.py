@@ -6,7 +6,7 @@ from high_order_spectra_analysis.time_domain_bispectrum.tdbs import tdbs
 from pathos.multiprocessing import ProcessingPool as Pool
 import os
 from time import perf_counter
-
+import pendulum
 from bispectrum_real_data_analysis.scripts.utils import seconds_to_formatted_time
 
 
@@ -104,13 +104,17 @@ def process_tdbs(
         dict: dict with the column name and the result of the tdbs
     """
     signal = df[column]
-     
+
+    if np.any([args_tdbs["fmin"], args_tdbs["fmax"], args_tdbs["freq_step"]]) and args_tdbs["frequency_array"] is None:
+        raise ValueError("You must provide either the frequency array or the fmin, fmax and freq_step parameters")
+
     return {
         "column": column, 
         "result": tdbs(
             signal=signal,
             frequency_sampling=args_tdbs["frequency_sampling"],
             time=args_tdbs["time"],
+            frequency_array=args_tdbs["frequency_array"],
             fmin=args_tdbs["fmin"],
             fmax=args_tdbs["fmax"],
             freq_step=args_tdbs["freq_step"],
@@ -125,10 +129,19 @@ if __name__ == "__main__":
     # Select the configuration to run the script
     # Warning: Depending on the configuration, the script may take a long time (hours) to run, be careful
 
+    id_results: str = "rato-001"
+    frequency_array = np.arange(start=4, stop=10, step=0.1)
+    frequency_array = np.append(frequency_array, np.arange(start=53.71 - 2, stop=53.71 + 2, step=0.01))
+
+    # TDBS_PARAMETERS = {
+    #     "fmin": 0,
+    #     "fmax": 60,
+    #     "freq_step": 0.1,
+    #     "phase_step": 0.01
+    # }
+
     TDBS_PARAMETERS = {
-        "fmin": 0,
-        "fmax": 60,
-        "freq_step": 0.1,
+        "frequency_array": frequency_array,
         "phase_step": 0.01
     }
 
@@ -172,9 +185,10 @@ if __name__ == "__main__":
                 {
                     "frequency_sampling": FrequencySampling,
                     "time": time,
-                    "fmin": TDBS_PARAMETERS["fmin"],
-                    "fmax": TDBS_PARAMETERS["fmax"],
-                    "freq_step": TDBS_PARAMETERS["freq_step"],
+                    "frequency_array": TDBS_PARAMETERS.get("frequency_array"),
+                    "fmin": TDBS_PARAMETERS.get("fmin"),
+                    "fmax": TDBS_PARAMETERS.get("fmax"),
+                    "freq_step": TDBS_PARAMETERS.get("freq_step"),
                     "phase_step": TDBS_PARAMETERS["phase_step"]
                 }
             ), 
@@ -198,8 +212,8 @@ if __name__ == "__main__":
     spectrum_df = pd.concat([spectrum_df_amps, spectrum_df_phases], axis=1)
     bispectrum_df = pd.concat([bispectrum_df_amps, bispectrum_df_phases], axis=1)
 
-    spectrum_df.to_csv(f'{BASE_PATH}/spectrum_{TDBS_PARAMETERS["fmin"]}_to_{TDBS_PARAMETERS["fmax"]}_by_{TDBS_PARAMETERS["freq_step"]}.csv', index=False)
-    bispectrum_df.to_csv(f'{BASE_PATH}/bispectrum_{TDBS_PARAMETERS["fmin"]}_to_{TDBS_PARAMETERS["fmax"]}_by_{TDBS_PARAMETERS["freq_step"]}.csv', index=False)
+    spectrum_df.to_csv(f'{BASE_PATH}/spectrum_{id_results}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv', index=False)
+    bispectrum_df.to_csv(f'{BASE_PATH}/bispectrum_{id_results}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv', index=False)
 
     end_time = perf_counter()
 
