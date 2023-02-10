@@ -21,7 +21,7 @@ class TDBS:
         freq_step: float = 1e-3,
         phase_step: float = 1e-3,
         dtype: np.dtype = np.float64,
-        enable_progress_bar: bool = False
+        enable_progress_bar: bool = True
     ):
         self.frequency_sampling = frequency_sampling
         self.time = time
