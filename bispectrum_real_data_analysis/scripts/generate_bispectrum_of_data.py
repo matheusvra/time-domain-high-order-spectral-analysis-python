@@ -8,6 +8,47 @@ import os
 from time import perf_counter
 import pendulum
 from bispectrum_real_data_analysis.scripts.utils import seconds_to_formatted_time
+from loguru import logger
+
+class TDBS:
+    def __init__(
+        self,
+        frequency_sampling: float, 
+        time: np.ndarray | None = None,
+        frequency_array: np.ndarray | None = None,
+        fmin: float | None = None,
+        fmax: float | None = None,
+        freq_step: float = 1e-3,
+        phase_step: float = 1e-3,
+        dtype: np.dtype = np.float64,
+        enable_progress_bar: bool = False
+    ):
+        self.frequency_sampling = frequency_sampling
+        self.time = time
+        self.frequency_array = frequency_array
+        self.fmin = fmin
+        self.fmax = fmax
+        self.freq_step = freq_step
+        self.phase_step = phase_step
+        self.dtype = dtype
+        self.enable_progress_bar = enable_progress_bar
+
+    def run_tbds(self, signal_dict: np.ndarray | pd.Series): 
+        column, signal = list(signal_dict.items())[0]
+        return {
+            column: tdbs(
+                signal, 
+                self.frequency_sampling, 
+                time=self.time, 
+                frequency_array=self.frequency_array, 
+                fmin=self.fmin, 
+                fmax=self.fmax, 
+                freq_step=self.freq_step, 
+                phase_step=self.phase_step, 
+                dtype=self.dtype, 
+                enable_progress_bar=self.enable_progress_bar
+            )
+        }
 
 
 def load_data():
@@ -66,62 +107,25 @@ def select_event_window(
 
 
 def decimate(data, desired_frequency_sampling):
-    backup_data = data.copy()
-    time = backup_data.Time.to_numpy()
+    time = data.Time.to_numpy()
     TimeSampling = round(np.mean(time[1:] - time[:-1]), 6)
     FrequencySampling = 1.0/TimeSampling
-    print(f"The time sampling is {TimeSampling} seconds and the frequency is "
+    logger.info(f"The time sampling is {TimeSampling} seconds and the frequency is "
         f"{FrequencySampling/float(1000**(FrequencySampling<=1000))} {'k'*bool(FrequencySampling>=1000)}Hz")
 
     newTimeSampling = 1.0/desired_frequency_sampling
     decimation_rate = np.ceil(newTimeSampling/TimeSampling).astype(int)
-    print(f"The data will be decimated by the rate 1:{decimation_rate}")
+    logger.info(f"The data will be decimated by the rate 1:{decimation_rate}")
 
     data = data[::decimation_rate]
 
     TimeSampling = newTimeSampling
     
     FrequencySampling = 1.0/TimeSampling
-    print(f"The new time sampling is {np.round(TimeSampling, 5)} s and the new frequency is "
+    logger.info(f"The new time sampling is {np.round(TimeSampling, 5)} s and the new frequency is "
     f"{FrequencySampling/float(1000**(FrequencySampling>=1000))} {'k'*bool(FrequencySampling>=1000)}Hz")
     
-    return data, TimeSampling, FrequencySampling, backup_data
-
-
-def process_tdbs(
-    column: list[str], 
-    df: pd.DataFrame, 
-    args_tdbs: dict
-) -> dict:
-    """ Method to process the tdbs for a given column
-
-    Args:
-        column (list[str]): column name
-        df (pd.DataFrame): dataframe with the data
-        args_tdbs (dict): arguments to the tdbs function
-
-    Returns:
-        dict: dict with the column name and the result of the tdbs
-    """
-    signal = df[column]
-
-    if np.any([args_tdbs["fmin"], args_tdbs["fmax"], args_tdbs["freq_step"]]) and args_tdbs["frequency_array"] is None:
-        raise ValueError("You must provide either the frequency array or the fmin, fmax and freq_step parameters")
-
-    return {
-        "column": column, 
-        "result": tdbs(
-            signal=signal,
-            frequency_sampling=args_tdbs["frequency_sampling"],
-            time=args_tdbs["time"],
-            frequency_array=args_tdbs["frequency_array"],
-            fmin=args_tdbs["fmin"],
-            fmax=args_tdbs["fmax"],
-            freq_step=args_tdbs["freq_step"],
-            phase_step=args_tdbs["phase_step"],
-            enable_progress_bar=False
-        )
-    }
+    return data, TimeSampling, FrequencySampling
 
 
 if __name__ == "__main__":
@@ -158,22 +162,21 @@ if __name__ == "__main__":
 
     samples_before = 0
     samples_after = 0
+
+    desired_frequency_sampling = 200
+
+    data, TimeSampling, FrequencySampling = decimate(full_data, desired_frequency_sampling=desired_frequency_sampling)
+
     for event_number in events:
 
-        print(f"\nProcessing event {event_number}")
+        logger.info(f"\nProcessing event {event_number}")
 
         event_data = select_event_window(
-            df=full_data,
+            df=data,
             event_number=event_number,
             samples_before=samples_before,
             samples_after=samples_after
         )
-
-        desired_frequency_sampling = 200
-
-        data, TimeSampling, FrequencySampling, backup_data = decimate(event_data, desired_frequency_sampling=desired_frequency_sampling)
-
-        time = event_data.Time.to_numpy()
 
         spectrum_df_amps = pd.DataFrame()
         spectrum_df_phases = pd.DataFrame()
@@ -181,32 +184,30 @@ if __name__ == "__main__":
         bispectrum_df_amps = pd.DataFrame()
         bispectrum_df_phases = pd.DataFrame()
 
-        print("Processing the tdbs... This may take a while...\n")
+        logger.info("Processing the tdbs... This may take a while...\n")
         start_time = perf_counter()
 
         # Process the tdbs for each channel, in parallel
+
+        tdbs_object = TDBS(
+            frequency_sampling=FrequencySampling,
+            time=None,
+            frequency_array=TDBS_PARAMETERS.get("frequency_array"),
+            fmin=TDBS_PARAMETERS.get("fmin"),
+            fmax=TDBS_PARAMETERS.get("fmax"),
+            freq_step=TDBS_PARAMETERS.get("freq_step"),
+            phase_step=TDBS_PARAMETERS["phase_step"]
+        )
+
+        f = lambda x: tdbs_object.run_tbds(x)
+
         with Pool() as pool:
             channels_columns = event_data.columns[2:18]
 
-            for result in pool.map(
-                lambda column: process_tdbs(
-                    column, 
-                    event_data, 
-                    {
-                        "frequency_sampling": FrequencySampling,
-                        "time": time,
-                        "frequency_array": TDBS_PARAMETERS.get("frequency_array"),
-                        "fmin": TDBS_PARAMETERS.get("fmin"),
-                        "fmax": TDBS_PARAMETERS.get("fmax"),
-                        "freq_step": TDBS_PARAMETERS.get("freq_step"),
-                        "phase_step": TDBS_PARAMETERS["phase_step"]
-                    }
-                ), 
-                channels_columns
-            ):
-                column = result["column"]
-                signal = event_data[column].to_numpy()
-                frequency_array, spectrum, phase_spectrum, bispectrum, phase_bispectrum = result["result"]
+            for result in pool.map(f, [{column: event_data[column].to_numpy()} for column in channels_columns]):
+                pass
+                column, result_data = list(result.items())[0]
+                frequency_array, spectrum, phase_spectrum, bispectrum, phase_bispectrum = result_data
 
                 if "frequency" not in spectrum_df_amps.columns or "frequency" not in bispectrum_df_amps.columns:
                     spectrum_df_amps = spectrum_df_amps.assign(frequency=frequency_array)
@@ -227,6 +228,4 @@ if __name__ == "__main__":
 
         end_time = perf_counter()
 
-        print(f"Done. Elapsed time: {seconds_to_formatted_time(end_time - start_time)}")
-
-    
+        logger.success(f"Done. Elapsed time: {seconds_to_formatted_time(end_time - start_time)}")
