@@ -17,9 +17,15 @@ if __name__ == "__main__":
     # Select which data to plot
     BASE_PATH = os.getcwd() + "/bispectrum_real_data_analysis/data"
 
-    prefix_rat = "bispectrum_rato-001"
+    prefix_rat = "trispectrum_rato-001"
+    experiment_date = "27-02-2023"
 
-    files_to_plot = [f"{BASE_PATH}/{f}" for f in os.listdir(BASE_PATH) if os.path.isfile(os.path.join(BASE_PATH, f)) and f.startswith(prefix_rat)]   
+    files_to_plot = [
+        f"{BASE_PATH}/{f}" for f in os.listdir(BASE_PATH) 
+        if os.path.isfile(os.path.join(BASE_PATH, f)) 
+        and f.startswith(prefix_rat) 
+        and f.endswith(f"{experiment_date}.csv")
+    ]   
 
     standardize = True
 

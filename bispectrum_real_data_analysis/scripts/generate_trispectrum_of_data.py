@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from high_order_spectra_analysis.time_domain_bispectrum.tdbs import tdbs
+from high_order_spectra_analysis.time_domain_trispectrum.tdts import tdts
 from pathos.multiprocessing import ProcessingPool as Pool
 import os
 from time import perf_counter
@@ -8,10 +8,11 @@ import pendulum
 from bispectrum_real_data_analysis.scripts.utils import seconds_to_formatted_time
 from loguru import logger
 
-class TDBS:
+
+class TDTS:
     def __init__(
         self,
-        frequency_sampling: float,
+        frequency_sampling: float, 
         time: np.ndarray | None = None,
         frequency_array: np.ndarray | None = None,
         fmin: float | None = None,
@@ -31,10 +32,10 @@ class TDBS:
         self.dtype = dtype
         self.enable_progress_bar = enable_progress_bar
 
-    def run_tbds(self, signal_dict: np.ndarray | pd.Series): 
+    def run_tbds(self, signal_dict: np.ndarray | pd.Series) -> dict[str, tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]]: 
         column, signal = list(signal_dict.items())[0]
         return {
-            column: tdbs(
+            column: tdts(
                 signal, 
                 self.frequency_sampling, 
                 time=self.time, 
@@ -182,12 +183,15 @@ if __name__ == "__main__":
         bispectrum_df_amps = pd.DataFrame()
         bispectrum_df_phases = pd.DataFrame()
 
-        logger.info("Processing the tdbs... This may take a while...\n")
+        trispectrum_df_amps = pd.DataFrame()
+        trispectrum_df_phases = pd.DataFrame()
+
+        logger.info("Processing the tdts... This may take a while...\n")
         start_time = perf_counter()
 
         # Process the tdbs for each channel, in parallel
 
-        tdbs_object = TDBS(
+        tdbs_object = TDTS(
             frequency_sampling=FrequencySampling,
             time=None,
             frequency_array=TDBS_PARAMETERS.get("frequency_array"),
@@ -205,11 +209,12 @@ if __name__ == "__main__":
             for result in pool.map(f, [{column: event_data[column].to_numpy()} for column in channels_columns]):
                 pass
                 column, result_data = list(result.items())[0]
-                frequency_array, spectrum, phase_spectrum, bispectrum, phase_bispectrum = result_data
+                frequency_array, spectrum, phase_spectrum, bispectrum, phase_bispectrum, trispectrum, phase_trispectrum = result_data
 
                 if "frequency" not in spectrum_df_amps.columns or "frequency" not in bispectrum_df_amps.columns:
                     spectrum_df_amps = spectrum_df_amps.assign(frequency=frequency_array)
                     bispectrum_df_amps = bispectrum_df_amps.assign(frequency=frequency_array)
+                    trispectrum_df_amps = trispectrum_df_amps.assign(frequency=frequency_array)
 
                 spectrum_df_amps = spectrum_df_amps.assign(**{f"tds_amp_{column}": spectrum})
                 spectrum_df_phases = spectrum_df_phases.assign(**{f"tds_phase_{column}": phase_spectrum})
@@ -217,12 +222,17 @@ if __name__ == "__main__":
                 bispectrum_df_amps = bispectrum_df_amps.assign(**{f"tdbs_amp_{column}": bispectrum})
                 bispectrum_df_phases = bispectrum_df_phases.assign(**{f"tdbs_phase_{column}": phase_bispectrum})
 
+                trispectrum_df_amps = trispectrum_df_amps.assign(**{f"tdts_amp_{column}": trispectrum})
+                trispectrum_df_phases = trispectrum_df_phases.assign(**{f"tdts_phase_{column}": phase_trispectrum})
+
 
         spectrum_df = pd.concat([spectrum_df_amps, spectrum_df_phases], axis=1)
         bispectrum_df = pd.concat([bispectrum_df_amps, bispectrum_df_phases], axis=1)
+        trispectrum_df = pd.concat([trispectrum_df_amps, trispectrum_df_phases], axis=1)
 
         spectrum_df.to_csv(f'{BASE_PATH}/spectrum_{id_results}-evento-{event_number}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv', index=False)
         bispectrum_df.to_csv(f'{BASE_PATH}/bispectrum_{id_results}-evento-{event_number}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv', index=False)
+        trispectrum_df.to_csv(f'{BASE_PATH}/trispectrum_{id_results}-evento-{event_number}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv', index=False)
 
         end_time = perf_counter()
 
