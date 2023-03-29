@@ -11,7 +11,6 @@ filenames = filenames(3:end);
 for file = filenames
     disp("loading file " + file + "...")
     load('-mat', data_path+"/"+file)
-%     matrix = string(cell2mat(data.data));
     time = linspace(0, (length(data(1, :))-1)*(1/srate), length(data(1, :)));
     
     index = ["Time";
