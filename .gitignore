@@ -398,3 +398,5 @@ poetry.toml
 *.csv
 *.CSV
 *.mat
+*.html
+*.zip
