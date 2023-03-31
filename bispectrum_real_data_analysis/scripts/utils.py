@@ -19,7 +19,7 @@ def seconds_to_formatted_time(seconds: float) -> str:
         ]
     )
 
-def standardize_array(array: np.ndarray) -> np.ndarray:
+def standardize_array(array: np.ndarray, scale_to_unit: bool = False) -> np.ndarray:
     """Function to standardize an array.
 
     Args:
@@ -28,4 +28,10 @@ def standardize_array(array: np.ndarray) -> np.ndarray:
     Returns:
         np.ndarray: standardized array
     """
-    return (array - array.mean()) / array.std()
+    if scale_to_unit:
+        standardized_array =  (array - array.min())/(array.max() - array.min())
+    
+    else:
+        standardized_array = (array - array.mean()) / array.std()
+
+    return standardized_array

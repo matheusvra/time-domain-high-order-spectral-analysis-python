@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from high_order_spectra_analysis.time_domain_bispectrum.tdbs import tdbs
+from high_order_spectra_analysis.time_domain_trispectrum.tdts import tdts
 from pathos.multiprocessing import ProcessingPool as Pool
 import os
 from time import perf_counter
@@ -12,7 +12,7 @@ from loguru import logger
 BASE_PATH = os.getcwd() + "/bispectrum_real_data_analysis/data"
 
 
-class TDBS:
+class TDTS:
     def __init__(
         self,
         frequency_sampling: float,
@@ -36,9 +36,9 @@ class TDBS:
         self.enable_progress_bar = enable_progress_bar
 
     def run_tbds(self, signal_dict: np.ndarray | pd.Series): 
-        column, signal = list(signal_dict.items())[0]
+        event, signal = list(signal_dict.items())[0]
         return {
-            column: tdbs(
+            event: tdts(
                 signal, 
                 self.frequency_sampling, 
                 time=self.time, 
@@ -100,16 +100,19 @@ if __name__ == "__main__":
 
     rat_number: int = 1
 
-    data_to_process = ("train", "test")[0]
+    data_to_process = ("train", "test")[1]
 
     id_results: str = f"rato-{rat_number}-{data_to_process}"
 
     # Select the configuration to run the script, by commenting/uncommenting and changing the lines below
 
     # Configuration 1: Frequency array
-    frequency_array = np.arange(start=51.71, stop=55.71, step=0.01)
+    frequency_array = np.append(
+        np.arange(start=4, stop=10, step=0.01), 
+        np.arange(start=51.71, stop=55.71, step=0.01)
+    )
 
-    TDBS_PARAMETERS = {
+    TDTS_PARAMETERS = {
         "frequency_array": frequency_array,
         "phase_step": 0.01
     }
@@ -125,80 +128,76 @@ if __name__ == "__main__":
     data = data_dict[data_to_process]
 
     events = data.event.unique()
+    events = events[events != "base"]
    
     logger.info(f"Events in the data: {events}")
 
-    samples_before = 0
-    samples_after = 0
+    spectrum_df_amps = pd.DataFrame()
+    spectrum_df_phases = pd.DataFrame()
 
-    desired_frequency_sampling = 200
+    bispectrum_df_amps = pd.DataFrame()
+    bispectrum_df_phases = pd.DataFrame()
 
-    for event in events:
+    trispectrum_df_amps = pd.DataFrame()
+    trispectrum_df_phases = pd.DataFrame()
 
-        if event == "base":
-            continue
 
-        logger.info(f"\nProcessing event {event}")
+    logger.info("Processing the tdts... This may take a while...\n")
+    start_time = perf_counter()
 
-        event_data = select_event_window(
+    # Process the tdts for each channel, in parallel
+
+    time = data.Time.to_numpy()
+    TimeSampling = round(np.mean(time[1:] - time[:-1]), 6)
+    FrequencySampling = 1.0/TimeSampling
+
+    tdts_object = TDTS(
+        frequency_sampling=FrequencySampling,
+        time=None,
+        frequency_array=TDTS_PARAMETERS.get("frequency_array"),
+        fmin=TDTS_PARAMETERS.get("fmin"),
+        fmax=TDTS_PARAMETERS.get("fmax"),
+        freq_step=TDTS_PARAMETERS.get("freq_step"),
+        phase_step=TDTS_PARAMETERS["phase_step"]
+    )
+
+    f = lambda x: tdts_object.run_tbds(x)
+
+    with Pool() as pool:
+        
+        for result in pool.map(f, [{event: select_event_window(
             df=data,
             event_name=event,
-            samples_before=samples_before,
-            samples_after=samples_after
-        )
+            samples_before=0,
+            samples_after=0
+        ).loc[:, "Inferior_colliculus"].to_numpy()} for event in events]):
+            
+            event, result_data = list(result.items())[0]
+            frequency_array, spectrum, phase_spectrum, bispectrum, phase_bispectrum, trispectrum, phase_trispectrum = result_data
 
-        spectrum_df_amps = pd.DataFrame()
-        spectrum_df_phases = pd.DataFrame()
+            if "frequency" not in spectrum_df_amps.columns or "frequency" not in bispectrum_df_amps.columns:
+                spectrum_df_amps = spectrum_df_amps.assign(frequency=frequency_array)
+                bispectrum_df_amps = bispectrum_df_amps.assign(frequency=frequency_array)
+                trispectrum_df_amps = trispectrum_df_amps.assign(frequency=frequency_array)
 
-        bispectrum_df_amps = pd.DataFrame()
-        bispectrum_df_phases = pd.DataFrame()
+            spectrum_df_amps = spectrum_df_amps.assign(**{f"tds_amp_{event}": spectrum})
+            spectrum_df_phases = spectrum_df_phases.assign(**{f"tds_phase_{event}": phase_spectrum})
 
-        logger.info("Processing the tdbs... This may take a while...\n")
-        start_time = perf_counter()
+            bispectrum_df_amps = bispectrum_df_amps.assign(**{f"tdbs_amp_{event}": bispectrum})
+            bispectrum_df_phases = bispectrum_df_phases.assign(**{f"tdbs_phase_{event}": phase_bispectrum})
 
-        # Process the tdbs for each channel, in parallel
-
-        time = event_data.Time.to_numpy()
-        TimeSampling = round(np.mean(time[1:] - time[:-1]), 6)
-        FrequencySampling = 1.0/TimeSampling
-
-        tdbs_object = TDBS(
-            frequency_sampling=FrequencySampling,
-            time=None,
-            frequency_array=TDBS_PARAMETERS.get("frequency_array"),
-            fmin=TDBS_PARAMETERS.get("fmin"),
-            fmax=TDBS_PARAMETERS.get("fmax"),
-            freq_step=TDBS_PARAMETERS.get("freq_step"),
-            phase_step=TDBS_PARAMETERS["phase_step"]
-        )
-
-        f = lambda x: tdbs_object.run_tbds(x)
-
-        with Pool() as pool:
-            channels_columns = event_data.columns[2:3]
-
-            for result in pool.map(f, [{column: event_data[column].to_numpy()} for column in channels_columns]):
-                pass
-                column, result_data = list(result.items())[0]
-                frequency_array, spectrum, phase_spectrum, bispectrum, phase_bispectrum = result_data
-
-                if "frequency" not in spectrum_df_amps.columns or "frequency" not in bispectrum_df_amps.columns:
-                    spectrum_df_amps = spectrum_df_amps.assign(frequency=frequency_array)
-                    bispectrum_df_amps = bispectrum_df_amps.assign(frequency=frequency_array)
-
-                spectrum_df_amps = spectrum_df_amps.assign(**{f"tds_amp_{column}": spectrum})
-                spectrum_df_phases = spectrum_df_phases.assign(**{f"tds_phase_{column}": phase_spectrum})
-
-                bispectrum_df_amps = bispectrum_df_amps.assign(**{f"tdbs_amp_{column}": bispectrum})
-                bispectrum_df_phases = bispectrum_df_phases.assign(**{f"tdbs_phase_{column}": phase_bispectrum})
+            trispectrum_df_amps = trispectrum_df_amps.assign(**{f"tdts_amp_{event}": trispectrum})
+            trispectrum_df_phases = trispectrum_df_phases.assign(**{f"tdts_phase_{event}": phase_trispectrum})
 
 
-        spectrum_df = pd.concat([spectrum_df_amps, spectrum_df_phases], axis=1)
-        bispectrum_df = pd.concat([bispectrum_df_amps, bispectrum_df_phases], axis=1)
+    spectrum_df = pd.concat([spectrum_df_amps, spectrum_df_phases], axis=1)
+    bispectrum_df = pd.concat([bispectrum_df_amps, bispectrum_df_phases], axis=1)
+    trispectrum_df = pd.concat([trispectrum_df_amps, trispectrum_df_phases], axis=1)
 
-        spectrum_df.to_csv(f'{BASE_PATH}/spectrum_{id_results}-evento-{event}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv', index=False)
-        bispectrum_df.to_csv(f'{BASE_PATH}/bispectrum_{id_results}-evento-{event}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv', index=False)
+    spectrum_df.to_csv(f'{BASE_PATH}/spectrum_{id_results}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv', index=False)
+    bispectrum_df.to_csv(f'{BASE_PATH}/bispectrum_{id_results}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv', index=False)
+    trispectrum_df.to_csv(f'{BASE_PATH}/trispectrum_{id_results}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv', index=False)
 
-        end_time = perf_counter()
+    end_time = perf_counter()
 
-        logger.success(f"Done processint {data_to_process} data. Elapsed time: {seconds_to_formatted_time(end_time - start_time)}")
+    logger.success(f"Done processing {data_to_process} data. Elapsed time: {seconds_to_formatted_time(end_time - start_time)}")
