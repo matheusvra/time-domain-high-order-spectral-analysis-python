@@ -18,13 +18,14 @@ if __name__ == "__main__":
     BASE_PATH = os.getcwd() + "/bispectrum_real_data_analysis/data"
 
     rat_number: int = 1
+
     for data_to_process in ("train", "test"):
 
-        hosa_to_plot = ("spectrum", "bispectrum", "trispectrum")[2]
+        hosa_to_plot = ("spectrum", "bispectrum", "trispectrum", "hosa")[3]
 
         prefix_rat: str = f"rato-{rat_number}-{data_to_process}"
 
-        experiment_date = "30-03-2023"
+        experiment_date = "04-04-2023"
 
         logger.info(f"Plotting {hosa_to_plot} data from {prefix_rat} processed in {experiment_date}.")
 
@@ -42,15 +43,22 @@ if __name__ == "__main__":
             logger.info(f"Plotting {file.split('/')[-1]}")
             df = pd.read_csv(file, delimiter=',', encoding="utf8")
 
-            amplitude = df.iloc[:, 1:6]
 
-            if standardize:
-                amplitude = amplitude.apply(lambda x: standardize_array(x, scale_to_unit=False))
+            spectrum_colum_amp = [column for column in df.columns if column.startswith("tds_amp")]
+            bispectrum_colum_amp = [column for column in df.columns if column.startswith("tdbs_amp")]
+            trispectrum_colum_amp = [column for column in df.columns if column.startswith("tdts_amp")]
 
-            phase = df.iloc[:, 6:]
+            amplitudes_df = df.loc[:, spectrum_colum_amp + bispectrum_colum_amp + trispectrum_colum_amp]
+
+            spectrum_colum_phase = [column for column in df.columns if column.startswith("tds_phase")]
+            bispectrum_colum_phase = [column for column in df.columns if column.startswith("tdbs_phase")]
+            trispectrum_colum_phase = [column for column in df.columns if column.startswith("tdts_phase")]
+
+            phases_df = df.loc[:, spectrum_colum_phase + bispectrum_colum_phase + trispectrum_colum_phase]
+
             title = file.split('/')[-1].split('.')[0]
-            
-            fig = make_subplots(rows=2, cols=1)
+
+            fig = make_subplots(rows=3, cols=1)
 
             fig.update_layout(
                 font_family="Courier New",
@@ -58,15 +66,40 @@ if __name__ == "__main__":
                 title_font_family="Times New Roman",
                 title_font_color="black",
                 legend_title_font_color="green",
-                title=title
+                title=f"Amplitude - {title}"
             )
 
-            lines_amplitude = px.line(amplitude, x=df.iloc[:, 0], y=amplitude.columns)
-            lines_phase = px.line(phase, x=df.iloc[:, 0], y=phase.columns)
+            amplitudes = px.line(amplitudes_df, x=df.iloc[:, 0], y=amplitudes_df.columns)
+
+            for amplitude in amplitudes['data']:
+                i = 1*(amplitude.legendgroup.startswith("tds")) + \
+                2 * (amplitude.legendgroup.startswith("tdbs")) + \
+                3 * (amplitude.legendgroup.startswith("tdts"))
+                fig.add_trace(amplitude, row=i, col=1)
             
-            for amplitude_line in lines_amplitude['data']:
-                fig.add_trace(amplitude_line, row=1, col=1)
-            for phase_line in lines_phase['data']:
-                fig.add_trace(phase_line, row=2, col=1)
             fig.show()
+
+
+
+            fig = make_subplots(rows=3, cols=1)
+
+            fig.update_layout(
+                font_family="Courier New",
+                font_color="blue",
+                title_font_family="Times New Roman",
+                title_font_color="black",
+                legend_title_font_color="green",
+                title=f"Phase - {title}"
+            )
+
+            phases = px.line(phases_df, x=df.iloc[:, 0], y=phases_df.columns)
+
+            for phase in phases['data']:
+                i = 1*(phase.legendgroup.startswith("tds")) + \
+                2 * (phase.legendgroup.startswith("tdbs")) + \
+                3 * (phase.legendgroup.startswith("tdts"))
+                fig.add_trace(phase, row=i, col=1)
+            
+            fig.show()
+            
     logger.success("Done!")
