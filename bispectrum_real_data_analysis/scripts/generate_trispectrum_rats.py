@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
     rat_number: int = 1
 
-    data_to_process = ("train", "test")[1]
+    data_to_process = ("train", "test")[0]
 
     id_results: str = f"rato-{rat_number}-{data_to_process}"
 
@@ -111,6 +111,7 @@ if __name__ == "__main__":
         np.arange(start=4, stop=10, step=0.01), 
         np.arange(start=51.71, stop=55.71, step=0.01)
     )
+
 
     TDTS_PARAMETERS = {
         "frequency_array": frequency_array,
@@ -132,15 +133,8 @@ if __name__ == "__main__":
    
     logger.info(f"Events in the data: {events}")
 
-    spectrum_df_amps = pd.DataFrame()
-    spectrum_df_phases = pd.DataFrame()
-
-    bispectrum_df_amps = pd.DataFrame()
-    bispectrum_df_phases = pd.DataFrame()
-
-    trispectrum_df_amps = pd.DataFrame()
-    trispectrum_df_phases = pd.DataFrame()
-
+    df_amps = pd.DataFrame()
+    df_phases = pd.DataFrame()
 
     logger.info("Processing the tdts... This may take a while...\n")
     start_time = perf_counter()
@@ -175,28 +169,23 @@ if __name__ == "__main__":
             event, result_data = list(result.items())[0]
             frequency_array, spectrum, phase_spectrum, bispectrum, phase_bispectrum, trispectrum, phase_trispectrum = result_data
 
-            if "frequency" not in spectrum_df_amps.columns or "frequency" not in bispectrum_df_amps.columns:
-                spectrum_df_amps = spectrum_df_amps.assign(frequency=frequency_array)
-                bispectrum_df_amps = bispectrum_df_amps.assign(frequency=frequency_array)
-                trispectrum_df_amps = trispectrum_df_amps.assign(frequency=frequency_array)
+            if "frequency" not in df_amps.columns:
+                df_amps = df_amps.assign(frequency=frequency_array)
 
-            spectrum_df_amps = spectrum_df_amps.assign(**{f"tds_amp_{event}": spectrum})
-            spectrum_df_phases = spectrum_df_phases.assign(**{f"tds_phase_{event}": phase_spectrum})
+            df_amps = df_amps.assign(**{f"tds_amp_{event}": spectrum})
+            df_phases = df_phases.assign(**{f"tds_phase_{event}": phase_spectrum})
 
-            bispectrum_df_amps = bispectrum_df_amps.assign(**{f"tdbs_amp_{event}": bispectrum})
-            bispectrum_df_phases = bispectrum_df_phases.assign(**{f"tdbs_phase_{event}": phase_bispectrum})
+            df_amps = df_amps.assign(**{f"tdbs_amp_{event}": bispectrum})
+            df_phases = df_phases.assign(**{f"tdbs_phase_{event}": phase_bispectrum})
 
-            trispectrum_df_amps = trispectrum_df_amps.assign(**{f"tdts_amp_{event}": trispectrum})
-            trispectrum_df_phases = trispectrum_df_phases.assign(**{f"tdts_phase_{event}": phase_trispectrum})
+            df_amps = df_amps.assign(**{f"tdts_amp_{event}": trispectrum})
+            df_phases = df_phases.assign(**{f"tdts_phase_{event}": phase_trispectrum})
 
 
-    spectrum_df = pd.concat([spectrum_df_amps, spectrum_df_phases], axis=1)
-    bispectrum_df = pd.concat([bispectrum_df_amps, bispectrum_df_phases], axis=1)
-    trispectrum_df = pd.concat([trispectrum_df_amps, trispectrum_df_phases], axis=1)
+    hosa_df = pd.concat([df_amps, df_phases], axis=1)
 
-    spectrum_df.to_csv(f'{BASE_PATH}/spectrum_{id_results}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv', index=False)
-    bispectrum_df.to_csv(f'{BASE_PATH}/bispectrum_{id_results}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv', index=False)
-    trispectrum_df.to_csv(f'{BASE_PATH}/trispectrum_{id_results}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv', index=False)
+
+    hosa_df.to_csv(f'{BASE_PATH}/hosa_{id_results}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv', index=False)
 
     end_time = perf_counter()
 
