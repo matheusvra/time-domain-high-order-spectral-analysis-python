@@ -401,3 +401,6 @@ poetry.toml
 *.html
 *.zip
 *.eps
+*.pdf
+*.jpg  
+*.png

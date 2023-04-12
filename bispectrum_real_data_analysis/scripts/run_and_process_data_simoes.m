@@ -2,7 +2,7 @@ close all
 clear
 clc
 
-data_path = '/home/matheus/Documents/repositories/bispectrum_real_data_analysis/bispectrum_real_data_analysis/data/rats_simoes';
+data_path = '/home/matheus/Documents/repositories/bispectrum_real_data_analysis/bispectrum_real_data_analysis/data/rats';
 
 paths = dir(data_path);
 filenames = string({paths.name});
