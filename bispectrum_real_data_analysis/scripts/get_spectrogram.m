@@ -84,5 +84,5 @@ yticks([52, 53, 53.71, 54.5, 55])
 xlabel('Time (s)','FontSize',14), ylabel({'Inferior Colliculus';'Frequency (Hz)'},'FontSize',14)
 colorbar
 
-filename_output = sprintf("spectrogram_%s_data.eps", experiment);
+filename_output = sprintf(data_path + "/G%d-R%d_%s_spectrogram.eps", rat_number, group, experiment);
 print(filename_output, "-depsc")
