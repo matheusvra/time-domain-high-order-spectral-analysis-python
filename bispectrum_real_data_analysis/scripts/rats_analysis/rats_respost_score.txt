@@ -1,0 +1,9 @@
+group3rat1: bad
+group3rat3: good
+group3rat8: good
+group5rat1: very good
+group5rat2: median
+group5rat3: median
+group6rat6: bad
+group7rat4: awful
+group7rat10: bad
