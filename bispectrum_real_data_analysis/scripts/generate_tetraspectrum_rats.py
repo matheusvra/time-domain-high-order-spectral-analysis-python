@@ -104,6 +104,9 @@ def select_event_window(
     return df[begin_index:end_index]
 
 
+def norm_function(x: np.ndarray) -> np.ndarray:
+    return (x.copy() - x.mean())/x.std()
+
 if __name__ == "__main__":
 
     # Select the configuration to run the script
@@ -112,30 +115,36 @@ if __name__ == "__main__":
     group_number: int = 5
     rat_number: int = 1
 
+    norm: bool = True
+
     BASE_PATH = BASE_PATH.replace("groupxraty", f"group{group_number}rat{rat_number}")
+
+
+    # Select the configuration to run the script, by commenting/uncommenting and changing the lines below
+
+    # Configuration 1: Frequency array
+    frequency_array = np.arange(start=4, stop=60, step=0.01)
+    
+    TDTS_PARAMETERS = {
+        "frequency_array": frequency_array,
+        "phase_step": 0.01
+    }
+
+    # From here, the script will run the same for all configurations
+    data_train, data_test = load_data(rat_number=rat_number, group_number=group_number)
+
+    if norm:
+        data_train = data_train.assign(norm_Inferior_colliculus=norm_function(data_train.Inferior_colliculus.to_numpy()))
+        data_test = data_test.assign(norm_Inferior_colliculus=norm_function(data_test.Inferior_colliculus.to_numpy()))
+    
+    data_dict = {
+        "train": data_train,
+        "test": data_test
+    }
 
     for data_to_process in ("train", "test"):
 
         id_results: str = f"rato-{rat_number}-grupo-{group_number}-{data_to_process}"
-
-        # Select the configuration to run the script, by commenting/uncommenting and changing the lines below
-
-        # Configuration 1: Frequency array
-        frequency_array = np.arange(start=0, stop=100, step=0.01)
-        
-
-        TDTS_PARAMETERS = {
-            "frequency_array": frequency_array,
-            "phase_step": 0.01
-        }
-
-        # From here, the script will run the same for all configurations
-        data_train, data_test = load_data(rat_number=rat_number, group_number=group_number)
-
-        data_dict = {
-            "train": data_train,
-            "test": data_test
-        }
 
         data = data_dict[data_to_process]
 
@@ -174,7 +183,7 @@ if __name__ == "__main__":
                 event_name=event,
                 samples_before=0,
                 samples_after=0
-            ).loc[:, "Inferior_colliculus"].to_numpy()} for event in events]):
+            ).loc[:, f"{'norm_'*norm}Inferior_colliculus"].to_numpy()} for event in events]):
                 
                 event, result_data = list(result.items())[0]
                 (
@@ -207,7 +216,10 @@ if __name__ == "__main__":
 
         hosa_df = pd.concat([df_amps, df_phases], axis=1)
 
-        hosa_df.to_csv(f'{BASE_PATH}/hosa_{id_results}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv', index=False)
+        output_file = f'{BASE_PATH}/hosa_{id_results}_{"-".join(str(pendulum.today()).split("T")[0].split("-")[::-1])}.csv'
+        logger.info(f"Saving the results to {output_file}")
+        
+        hosa_df.to_csv(output_file, index=False)
 
         end_time = perf_counter()
 
