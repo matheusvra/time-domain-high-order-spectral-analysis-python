@@ -2,7 +2,7 @@ import os
 import shutil
 from loguru import logger
 
-script_to_be_updated = 'plot_data_rats_tdqs_all.py'
+script_to_be_updated = ''
 
 logger.info(f"Updating {script_to_be_updated} in all folders.")
 
