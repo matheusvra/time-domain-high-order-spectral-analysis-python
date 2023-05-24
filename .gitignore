@@ -404,3 +404,4 @@ poetry.toml
 *.pdf
 *.jpg  
 *.png
+*.html
