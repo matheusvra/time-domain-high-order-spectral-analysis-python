@@ -2,7 +2,7 @@ import os
 import shutil
 from loguru import logger
 
-script_to_be_updated = ''
+script_to_be_updated = 'bi-tri-spectrum_analysis_V3.ipynb'
 
 logger.info(f"Updating {script_to_be_updated} in all folders.")
 

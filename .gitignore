@@ -395,8 +395,6 @@ poetry.toml
 *.vsix
 .vscode/launch.json
 
-*.csv
-*.CSV
 *.mat
 *.html
 *.zip
@@ -405,3 +403,4 @@ poetry.toml
 *.jpg  
 *.png
 *.html
+data/

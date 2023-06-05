@@ -15,11 +15,12 @@ experiment = "Salina";
 rat_number = 10;
 group = 7;
 
-file = sprintf("G%d-R%d_%s.mat", group, rat_number, experiment);
+file = sprintf("G%d-R%d_%s_events.mat", group, rat_number, experiment);
 
 disp("loading file " + file + "...")
 load('-mat', data_path+"/"+file)
 
+%%
 time = linspace(0, (length(data(1, :))-1)*(1/srate), length(data(1, :)));
 
 disp("plotting...")
