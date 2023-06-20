@@ -124,7 +124,7 @@ class err:
         else:  # nu.shape[0]>1 (mais do que uma entrada)
             for i in range(self.nu.shape[0]):
                 for j in range(self.nu[i]):
-                    regu[:, k] = self.u[self.nmax - j - 1 : -j - 1, i]
+                    regu[:, k] = self.u[i, self.nmax - j - 1 : -j - 1]
                     k = k + 1
 
         reg = np.concatenate((regy, regu), axis=1)  # reg: todos os regressores lineares
