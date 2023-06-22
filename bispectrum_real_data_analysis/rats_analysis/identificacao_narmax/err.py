@@ -302,13 +302,20 @@ class err:
             print(output)
 
         termos = {}
+        termosu_index = [0, 1]
         for i in range(np.sum(self.nu) + self.ny):
             # y comes first, then comes u
             if i < self.ny:
                 termos[f"y(k-{i+1})"] = self.termos_matrix[:, i]
+            elif self.nu.shape[0] == 1:
+                termos[f"u(k-{i-self.nu[0]+1})"] = self.termos_matrix[:, i]
             else:
-                termos[f"u(k-{i-self.ny+1})"] = self.termos_matrix[:, i]
-
+                termos[f"u({termosu_index[0]}, k-{termosu_index[1]})"] = self.termos_matrix[:, i]
+                termosu_index[1] += 1
+                if termosu_index[1] > self.nu[termosu_index[0]-1]:
+                    termosu_index[0] += 1
+                    termosu_index[1] = 1
+                    
         termos = pd.DataFrame.from_dict(termos)
 
         logger.success("Done. ERR method finished.")
