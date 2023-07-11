@@ -406,3 +406,4 @@ poetry.toml
 *.pkl
 *.csv
 data/
+*/.ipynb_checkpoints
