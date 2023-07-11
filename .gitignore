@@ -403,4 +403,6 @@ poetry.toml
 *.jpg  
 *.png
 *.html
+*.pkl
+*.csv
 data/

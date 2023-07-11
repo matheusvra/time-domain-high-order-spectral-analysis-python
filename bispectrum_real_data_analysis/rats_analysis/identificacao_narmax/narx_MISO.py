@@ -156,6 +156,7 @@ if __name__ == "__main__":
 
     y = event_data.Inferior_colliculus_2.to_numpy()
 
+    u0 = event_data.CS_modulating.to_numpy()
     u1 = event_data.Inferior_colliculus_1.to_numpy()
     u2 = event_data.Inferior_colliculus_3.to_numpy()
     u3 = event_data.Inferior_colliculus_4.to_numpy()
@@ -164,9 +165,9 @@ if __name__ == "__main__":
     u6 = event_data.Amygdala_basolateral_1.to_numpy()
     u7 = event_data.Amygdala_basolateral_2.to_numpy()
 
-    u = np.vstack([u6, u7])
+    u = np.vstack([u0, u6, u7])
 
-    degree_of_non_linearity: int = 2
+    degree_of_non_linearity: int = 1
     max_y_delays: int = 5
     max_u_delays: int = np.array([5] * u.shape[0])
 
@@ -185,3 +186,5 @@ if __name__ == "__main__":
     err_out, termos, psi = err_obj.run(print_result=True)
 
     end_time = perf_counter()
+    
+    print(termos.columns)

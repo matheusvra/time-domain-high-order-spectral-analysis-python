@@ -2,7 +2,7 @@ import numpy as np
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from high_order_spectra_analysis.hosa.hosa import Tdhosa
-
+from matplotlib import pyplot as plt
 
 if __name__ == "__main__":
 
@@ -13,10 +13,12 @@ if __name__ == "__main__":
         fs = 1/time_step
         time = np.arange(0, 5, time_step, dtype=dtype)
 
-        freqs = np.array([29, 12, 5, 61], dtype=dtype)
+        freqs = np.array([5, 12, 29, 61], dtype=dtype)
+        f1, f2, f3, f4 = tuple(freqs)
         w1, w2, w3, w4 = tuple(2*np.pi*freqs)
-        gains = np.array([0.7, 1.15, 1.05, 0.93], dtype=dtype)
-        clean_signal = np.cos((w1 + w2)*time) + np.cos((w1 + w2 + w3)*time)
+        gains = np.array([1.05, 1.15, 0.7, 0.93], dtype=dtype)
+        clean_signal = np.cos((w2 + w3)*time) # add frequency coupling
+        clean_signal += np.cos((w1 + w2 + w3)*time) # add frequency coupling
 
         for freq, gain in zip(freqs, gains):
             clean_signal += gain*np.cos(2*np.pi*freq*time)
@@ -24,18 +26,18 @@ if __name__ == "__main__":
         signal = clean_signal.astype(dtype)*1e-5
 
         # adding noise
-        signal += np.random.normal(0, 0.5*signal.std(), size=signal.shape).astype(dtype)
+        # signal += np.random.normal(0, 1*signal.std(), size=signal.shape).astype(dtype)
 
         if norm_before:
             signal = (signal - signal.min())/(signal.max() - signal.min())
             signal -= signal.mean()
 
-        frequency_array_to_scan = np.arange(0, 100, 0.01, dtype=dtype)
+        frequency_array_to_scan = np.arange(0, 70, 0.01, dtype=dtype)
 
         tdqs_object = Tdhosa(
             frequency_sampling=fs,
             frequency_array=frequency_array_to_scan,
-            phase_step=1
+            phase_step=0.5
         )
 
         (
@@ -58,8 +60,58 @@ if __name__ == "__main__":
             trispectrum = (trispectrum - trispectrum.min())/(trispectrum.max() - trispectrum.min())
             tetraspectrum = (tetraspectrum - tetraspectrum.min())/(tetraspectrum.max() - tetraspectrum.min())
 
-        fig = make_subplots(rows=4, cols=1)
+        x_ticks: dict = dict(zip(np.append(freqs, [f2+f3, f1+f2+f3]), [f"w{i}" for i in range(1, len(freqs)+1)] + ["w2+w3", "w1+w2+w3"]))
 
+        # sort dict by key
+        x_ticks = dict(sorted(x_ticks.items(), key=lambda item: item[0]))
+
+        plt.figure(figsize=(20, 15))
+                
+        plt.subplot(411)
+        plt.plot(
+            frequency_array[frequency_array <= max_freq_plot],
+            spectrum[frequency_array <= max_freq_plot],
+        )
+        plt.ylabel("Spectrum")
+        plt.xticks(list(x_ticks.keys()), list(x_ticks.values()))
+        plt.xlim(0, max_freq_plot)
+        
+        plt.subplot(412)
+        plt.plot(
+            frequency_array[frequency_array <= max_freq_plot],
+            bispectrum[frequency_array <= max_freq_plot],
+        )
+        plt.ylabel("Bispectrum")
+        plt.xticks(list(x_ticks.keys()), x_ticks.values())
+        plt.xlim(0, max_freq_plot)
+        
+        plt.subplot(413)
+        plt.plot(
+            frequency_array[frequency_array <= max_freq_plot],
+            trispectrum[frequency_array <= max_freq_plot],
+        )
+        plt.ylabel("Trispectrum")
+        plt.xticks(list(x_ticks.keys()), x_ticks.values())
+        plt.xlim(0, max_freq_plot)
+        
+        plt.subplot(414)
+        plt.plot(
+            frequency_array[frequency_array <= max_freq_plot],
+            tetraspectrum[frequency_array <= max_freq_plot],
+        )
+        plt.ylabel("Tetraspectrum")
+        plt.xticks(list(x_ticks.keys()), list(x_ticks.keys()))
+        plt.xlim(0, max_freq_plot)
+        
+        plt.savefig(f"tdqs_validation_clean.pdf", format="pdf")
+        
+        plt.show()
+            
+        break
+    
+        fig = make_subplots(rows=4, cols=1)
+        
+    
         fig.update_layout(
             font_family="Courier New",
             font_color="blue",
@@ -94,3 +146,5 @@ if __name__ == "__main__":
         ), row=4, col=1)
 
         fig.show()
+        
+        break

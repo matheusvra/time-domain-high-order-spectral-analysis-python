@@ -9,18 +9,20 @@ packages = [{include = "bispectrum_real_data_analysis"}]
 [tool.poetry.dependencies]
 python = "^3.11"
 numpy = "^1.24.1"
-pandas = "^1.5.3"
+pandas = "^2.0.3"
 matplotlib = "^3.6.3"
 high-order-spectra-analysis = {git = "git@github.com:matheusvra/high_order_spectra_analysis.git", rev = "main"}
+error_reduction_rate = {git = "git@github.com:matheusvra/error_reduction_rate.git", rev = "main"}
 scipy = "^1.9.3"
-plotly = "^5.13.0"
 jupyter = "^1.0.0"
 pendulum = "^2.1.2"
-loguru = "^0.6.0"
+loguru = "^0.7.0"
 mat73 = "^0.60"
 jupyterlab = "^3.6.3"
 voila = "^0.4.0"
 sklearn = "^0.0.post5"
+plotly = "^5.15.0"
+jupyter-contrib-nbextensions = "^0.7.0"
 
 [build-system]
 requires = ["poetry-core"]
