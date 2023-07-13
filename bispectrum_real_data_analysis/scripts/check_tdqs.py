@@ -3,8 +3,17 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from high_order_spectra_analysis.hosa.hosa import Tdhosa
 from matplotlib import pyplot as plt
+import matplotlib
+
+fontsize = 16
+matplotlib.rc('xtick', labelsize=fontsize) 
+matplotlib.rc('ytick', labelsize=fontsize) 
+plt.rcParams['figure.figsize'] = [12, 8]
+plt.rcParams.update({'font.size': fontsize})
 
 if __name__ == "__main__":
+
+    noise: bool = True
 
     for norm_before, norm_after in [(False, False), (True, False), (False, True), (True, True)]:
 
@@ -13,7 +22,7 @@ if __name__ == "__main__":
         fs = 1/time_step
         time = np.arange(0, 5, time_step, dtype=dtype)
 
-        freqs = np.array([5, 12, 29, 61], dtype=dtype)
+        freqs = np.array([9, 12, 29, 61], dtype=dtype)
         f1, f2, f3, f4 = tuple(freqs)
         w1, w2, w3, w4 = tuple(2*np.pi*freqs)
         gains = np.array([1.05, 1.15, 0.7, 0.93], dtype=dtype)
@@ -26,7 +35,8 @@ if __name__ == "__main__":
         signal = clean_signal.astype(dtype)*1e-5
 
         # adding noise
-        # signal += np.random.normal(0, 1*signal.std(), size=signal.shape).astype(dtype)
+        if noise:
+            signal += np.random.normal(0, 1*signal.std(), size=signal.shape).astype(dtype)
 
         if norm_before:
             signal = (signal - signal.min())/(signal.max() - signal.min())
@@ -60,7 +70,7 @@ if __name__ == "__main__":
             trispectrum = (trispectrum - trispectrum.min())/(trispectrum.max() - trispectrum.min())
             tetraspectrum = (tetraspectrum - tetraspectrum.min())/(tetraspectrum.max() - tetraspectrum.min())
 
-        x_ticks: dict = dict(zip(np.append(freqs, [f2+f3, f1+f2+f3]), [f"w{i}" for i in range(1, len(freqs)+1)] + ["w2+w3", "w1+w2+w3"]))
+        x_ticks: dict = dict(zip(np.append(freqs, [f2+f3, f1+f2+f3]), [f"$f_{i}$" for i in range(1, len(freqs)+1)] + ["$f_2+f_3$", "$f_1+f_2+f_3$"]))
 
         # sort dict by key
         x_ticks = dict(sorted(x_ticks.items(), key=lambda item: item[0]))
@@ -99,11 +109,11 @@ if __name__ == "__main__":
             frequency_array[frequency_array <= max_freq_plot],
             tetraspectrum[frequency_array <= max_freq_plot],
         )
-        plt.ylabel("Tetraspectrum")
+        plt.ylabel("Quadrispectrum")
         plt.xticks(list(x_ticks.keys()), list(x_ticks.keys()))
         plt.xlim(0, max_freq_plot)
-        
-        plt.savefig(f"tdqs_validation_clean.pdf", format="pdf")
+        plt.xlabel("Frequency [Hz]")
+        plt.savefig(f"tdqs_validation{'_clean'*(not noise) + '_noisy'*noise}.pdf", format="pdf")
         
         plt.show()
             
