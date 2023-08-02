@@ -18,10 +18,10 @@ if __name__ == "__main__":
         
     os.system("clear")
     # If you want to filter the data, change BOTH the values of low_lim and high_lim.
-    low_lim: float | None = None
-    high_lim: float | None = None
+    low_lim: float | None = 4
+    high_lim: float | None = 50
     
-    events: int | list[int] = [1, 2, 3, 4, 5]
+    events: int | list[int] = 1 # [1, 2, 3, 4, 5]
     
     id_file: str = "narx_only_ic"
 

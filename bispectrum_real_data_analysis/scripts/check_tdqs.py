@@ -13,19 +13,17 @@ plt.rcParams.update({'font.size': fontsize})
 
 if __name__ == "__main__":
 
-    noise: bool = True
-
-    for norm_before, norm_after in [(False, False), (True, False), (False, True), (True, True)]:
+    for norm_before, norm_after, noise in [(False, True, False), (False, True, True)]:
 
         dtype = np.float32
         time_step = 0.003
         fs = 1/time_step
         time = np.arange(0, 5, time_step, dtype=dtype)
 
-        freqs = np.array([9, 12, 29, 61], dtype=dtype)
-        f1, f2, f3, f4 = tuple(freqs)
-        w1, w2, w3, w4 = tuple(2*np.pi*freqs)
-        gains = np.array([1.05, 1.15, 0.7, 0.93], dtype=dtype)
+        freqs = np.array([9, 12, 29, 61, 19], dtype=dtype)
+        f1, f2, f3, f4, f5 = tuple(freqs)
+        w1, w2, w3, w4, w5 = tuple(2*np.pi*freqs)
+        gains = np.array([1.05, 1.15, 0.7, 0.93, 0.8], dtype=dtype)
         clean_signal = np.cos((w2 + w3)*time) # add frequency coupling
         clean_signal += np.cos((w1 + w2 + w3)*time) # add frequency coupling
 
@@ -117,44 +115,44 @@ if __name__ == "__main__":
         
         plt.show()
             
-        break
+        # break
     
-        fig = make_subplots(rows=4, cols=1)
+        # fig = make_subplots(rows=4, cols=1)
         
     
-        fig.update_layout(
-            font_family="Courier New",
-            font_color="blue",
-            title_font_family="Times New Roman",
-            title_font_color="black",
-            legend_title_font_color="green",
-            title=f"Normalized before: {norm_before}, Normalized after: {norm_after}"
-        )
+        # fig.update_layout(
+        #     font_family="Courier New",
+        #     font_color="blue",
+        #     title_font_family="Times New Roman",
+        #     title_font_color="black",
+        #     legend_title_font_color="green",
+        #     title=f"Normalized before: {norm_before}, Normalized after: {norm_after}"
+        # )
 
-        fig.append_trace(go.Scatter(
-            x=frequency_array[frequency_array <= max_freq_plot],
-            y=spectrum[frequency_array <= max_freq_plot],
-            name="Spectrum",
-        ), row=1, col=1)
+        # fig.append_trace(go.Scatter(
+        #     x=frequency_array[frequency_array <= max_freq_plot],
+        #     y=spectrum[frequency_array <= max_freq_plot],
+        #     name="Spectrum",
+        # ), row=1, col=1)
 
-        fig.append_trace(go.Scatter(
-            x=frequency_array[frequency_array <= max_freq_plot],
-            y=bispectrum[frequency_array <= max_freq_plot],
-            name="Bispectrum",
-        ), row=2, col=1)
+        # fig.append_trace(go.Scatter(
+        #     x=frequency_array[frequency_array <= max_freq_plot],
+        #     y=bispectrum[frequency_array <= max_freq_plot],
+        #     name="Bispectrum",
+        # ), row=2, col=1)
 
-        fig.append_trace(go.Scatter(
-            x=frequency_array[frequency_array <= max_freq_plot],
-            y=trispectrum[frequency_array <= max_freq_plot],
-            name="Trispectrum",
-        ), row=3, col=1)
+        # fig.append_trace(go.Scatter(
+        #     x=frequency_array[frequency_array <= max_freq_plot],
+        #     y=trispectrum[frequency_array <= max_freq_plot],
+        #     name="Trispectrum",
+        # ), row=3, col=1)
 
-        fig.append_trace(go.Scatter(
-            x=frequency_array[frequency_array <= max_freq_plot],
-            y=tetraspectrum[frequency_array <= max_freq_plot],
-            name="Tetraspectrum",
-        ), row=4, col=1)
+        # fig.append_trace(go.Scatter(
+        #     x=frequency_array[frequency_array <= max_freq_plot],
+        #     y=tetraspectrum[frequency_array <= max_freq_plot],
+        #     name="Tetraspectrum",
+        # ), row=4, col=1)
 
-        fig.show()
+        # fig.show()
         
-        break
+        # break
