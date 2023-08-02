@@ -5,7 +5,7 @@ from pathos.multiprocessing import ProcessingPool as Pool
 import os
 from time import perf_counter
 import pendulum
-from bispectrum_real_data_analysis.scripts.utils import seconds_to_formatted_time
+from bispectrum_real_data_analysis.scripts.utils import decimate, seconds_to_formatted_time
 from loguru import logger
 from scipy import signal
 
@@ -105,34 +105,6 @@ def select_event_window(
   return df[begin_index:end_index]
 
 
-def decimate(data: pd.DataFrame, desired_frequency_sampling: float, filter: bool = False):
-    time = data.Time.to_numpy()
-    TimeSampling = round(np.mean(time[1:] - time[:-1]), 6)
-    FrequencySampling = 1.0/TimeSampling
-    logger.info(f"The time sampling is {TimeSampling} seconds and the frequency is "
-        f"{FrequencySampling/float(1000**(FrequencySampling<=1000))} {'k'*bool(FrequencySampling>=1000)}Hz")
-
-    newTimeSampling = 1.0/desired_frequency_sampling
-    decimation_rate = np.ceil(newTimeSampling/TimeSampling).astype(int)
-    logger.info(f"The data will be decimated by the rate 1:{decimation_rate}")
-
-    if filter:
-        matrix = data.iloc[:, 1:-2].to_numpy()
-        decimated_matrix = signal.decimate(matrix, decimation_rate, axis=0, ftype='fir', zero_phase=True)
-        new_data = data.copy()[::decimation_rate]
-        new_data.iloc[:, 1:-2] = decimated_matrix
-    else:
-        new_data = data[::decimation_rate]
-
-    TimeSampling = newTimeSampling
-    
-    FrequencySampling = 1.0/TimeSampling
-    logger.info(f"The new time sampling is {np.round(TimeSampling, 5)} s and the new frequency is "
-    f"{FrequencySampling/float(1000**(FrequencySampling>=1000))} {'k'*bool(FrequencySampling>=1000)}Hz")
-    
-    return new_data, TimeSampling, FrequencySampling
-
-
 if __name__ == "__main__":
 
     # Select the configuration to run the script
@@ -168,7 +140,7 @@ if __name__ == "__main__":
     samples_before = 0
     samples_after = 0
 
-    desired_frequency_sampling = 200
+    desired_frequency_sampling = 250
 
     data, TimeSampling, FrequencySampling = decimate(full_data, desired_frequency_sampling=desired_frequency_sampling)
 
