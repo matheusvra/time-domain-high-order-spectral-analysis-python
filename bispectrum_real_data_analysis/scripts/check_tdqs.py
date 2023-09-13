@@ -111,7 +111,7 @@ if __name__ == "__main__":
         plt.xticks(list(x_ticks.keys()), list(x_ticks.keys()))
         plt.xlim(0, max_freq_plot)
         plt.xlabel("Frequency [Hz]")
-        plt.savefig(f"tdqs_validation{'_clean'*(not noise) + '_noisy'*noise}.pdf", format="pdf")
+        plt.savefig(f"tdqs_validation{'_clean'*(not noise) + '_noisy'*noise}.jpeg", format="jpeg")
         
         plt.show()
             

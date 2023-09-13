@@ -402,6 +402,7 @@ poetry.toml
 *.pdf
 *.jpg  
 *.png
+*.jpeg
 *.html
 *.pkl
 *.csv
