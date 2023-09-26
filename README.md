@@ -1,5 +1,5 @@
 
-# Bispectrum Real Data Analysis
+# Time Domain High Order Spectral Analysis Python
 
 Este documento apresenta um tutorial sobre como instalar e configurar o ambiente pela primeira vez, instalar a atualizar as dependências, bem como rodar os scripts.
 
