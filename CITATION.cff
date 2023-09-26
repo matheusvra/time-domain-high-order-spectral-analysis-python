@@ -5,6 +5,6 @@ message: >-
   metadata from this file.
 type: software
 authors:
-  - given-names: Matheus Victor
-    family-names: Ramos dos Anjos
+  - given-names: Matheus Victor Ramos dos
+    family-names: Anjos
     email: matheusvra@ufmg.br
