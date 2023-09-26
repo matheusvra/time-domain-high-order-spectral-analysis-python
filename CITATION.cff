@@ -1,8 +1,5 @@
-# This CITATION.cff file was generated with cffinit.
-# Visit https://bit.ly/cffinit to generate yours today!
-
 cff-version: 1.2.0
-title: time_domain_high_order_spectral_analysis_python
+title: time-domain-high-order-spectral-analysis-python
 message: >-
   If you use this software, please cite it using the
   metadata from this file.
@@ -10,19 +7,4 @@ type: software
 authors:
   - given-names: Matheus Victor
     family-names: Ramos dos Anjos
-    name-particle: Matheus Victor
-    email: matheusvra@hotmail.com
-  - name: Programa de Pós Graduação em Engenharia Elétrica
-    address: 'Avenida Antônio Carlos, 6627 - Escola de Engenharia'
-    city: Belo Horizonte
-    post-code: 31270-90
-    region: Sudeste
-    email: ppgee@cpdee.ufmg.br
-    tel: +55 (31)3409-5465
-    location: Minas Gerais
-    date-start: '2021-05-17'
-    date-end: '2023-11-17'
-    alias: PPGEE
-    country: BR
-    fax: +55 (31)3409-5480
-    website: 'https://www.ppgee.ufmg.br/'
+    email: matheusvra@ufmg.br
