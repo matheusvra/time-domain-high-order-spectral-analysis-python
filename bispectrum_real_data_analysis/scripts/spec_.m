@@ -8,7 +8,7 @@ data_path = '/home/matheus/Documents/repositories/bispectrum_real_data_analysis/
 experiment = "Salina";
 
 % PreTreino
-% experiment = "PreTreino";
+experiment = "PreTreino";
 
 
 file = sprintf("G5-R1_%s.mat", experiment);
@@ -60,24 +60,24 @@ steps = diff(short_fft.freq); % according to the fft time window
 freq2plot = 51.7:steps(1):55.7;
 closestfreq = dsearchn(short_fft.freq,freq2plot');
 
-f2 = figure;
+f2 = figure('Position',[600 100 600 500]);;
 set(gcf,'color','w');
 colormap("hot");
 
 
 % Add titles in subplot introduced in 18b
-sgtitle({'Amplitude Spectrum via short-window FFT';['(window = ' num2str(short_fft.timewin./1000) 's' ' - ' 'nFFT = ' num2str(short_fft.nFFT) ' - ' 'overlap = ' num2str(short_fft.overlap) '%)' ]}) 
+sgtitle({'Espectrograma - Amplitude do Espectro via STFT';['(window = ' num2str(short_fft.timewin./1000) 's' ' - ' 'nFFT = ' num2str(short_fft.nFFT) ' - ' 'overlap = ' num2str(short_fft.overlap) '%)' ]}) 
 
 subplot(2,1,1)
 contourf(short_fft.time,short_fft.freq(closestfreq),abs(short_fft.data(closestfreq,:,1)),80,'linecolor','none');
 yticks([52, 53, 53.71, 54.5, 55])
-xlabel('Time (s)','FontSize',14), ylabel({'CS Modulating';'Frequency (Hz)'},'FontSize',14)
+xlabel('Tempo [s]','FontSize',14), ylabel({''; 'Moduladora';'Frequência [Hz]'},'FontSize',14)
 colorbar
 
 subplot(2,1,2)
 contourf(short_fft.time,short_fft.freq(closestfreq),abs(short_fft.data(closestfreq,:,2)),80,'linecolor','none');
 yticks([52, 53, 53.71, 54.5, 55])
-xlabel('Time (s)','FontSize',14), ylabel({'Inferior Colliculus';'Frequency (Hz)'},'FontSize',14)
+xlabel('Tempo [s]','FontSize',14), ylabel({''; 'Colículo Inferior';'Frequência [Hz]'},'FontSize',14)
 colorbar
 
 filename_output = sprintf("spectrogram_%s_data.eps", experiment);
